@@ -1,20 +1,33 @@
-import { Button } from "@/components/ui/button"
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
+import { Toaster } from "sonner"
+import { SiteHeader } from "@/components/layout/SiteHeader"
+import { SiteFooter } from "@/components/layout/SiteFooter"
+import { JobsPage } from "@/pages/JobsPage"
+import { JobDetailPage } from "@/pages/JobDetailPage"
+import { ApplyPage } from "@/pages/ApplyPage"
+import { PortalPage } from "@/pages/PortalPage"
+import { NotFoundPage } from "@/pages/NotFoundPage"
 
 export function App() {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
+    <BrowserRouter>
+      <div className="flex h-svh flex-col overflow-hidden dark:bg-black bg-sky-50 text-foreground">
+        <SiteHeader />
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <Routes>
+            <Route path="/" element={<JobsPage />} />
+            <Route path="/jobs" element={<Navigate to="/" replace />} />
+            <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+            <Route path="/jobs/:jobId/apply" element={<ApplyPage />} />
+            <Route path="/portal/:token" element={<PortalPage />} />
+            <Route path="/onboarding/:token" element={<PortalPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </main>
+        <SiteFooter />
+        <Toaster richColors position="top-center" />
       </div>
-    </div>
+    </BrowserRouter>
   )
 }
 
