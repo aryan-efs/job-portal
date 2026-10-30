@@ -8,6 +8,8 @@ const api = axios.create({
 export type JobPosting = {
   jobID: string
   requisitionID?: string
+  businessID?: string
+  branchID?: string | null
   jobPosition: string
   designation?: string | null
   salaryDetails?: string | null
@@ -24,6 +26,13 @@ export type JobPosting = {
   openings?: number
   mustHaveSkills?: string[] | null
   goodToHaveSkills?: string[] | null
+}
+
+export type DayworkerIdentity = {
+  dayworkerID: string
+  publicCode?: string
+  fullName?: string
+  mobile?: string
 }
 
 export type ApiSuccess<T> = {
@@ -94,6 +103,47 @@ export const jobsApi = {
         duplicates?: unknown
       }
     }
+  },
+}
+
+/** Public dayworker register + engage (auth removed on these onboarding routes). */
+export const dayworkerApi = {
+  async register(
+    businessID: string,
+    body: {
+      fullName: string
+      mobile: string
+      email?: string
+      preferredLocations?: string[]
+    }
+  ) {
+    const res = await api.post<
+      ApiSuccess<{ created: boolean; dayworker: DayworkerIdentity }>
+    >(`/onboarding/${businessID}/dayworkers`, body)
+    return unwrap(res.data)
+  },
+
+  async engage(
+    businessID: string,
+    body: {
+      dayworkerIdentifier: string
+      startDate: string
+      jobSkill?: string
+      requisitionID?: string
+      branchID?: string | null
+      proceedWithPendingVerification?: boolean
+      allowOverlap?: boolean
+    }
+  ) {
+    const res = await api.post<
+      ApiSuccess<{
+        engaged?: boolean
+        requiresVerification?: boolean
+        engagement?: unknown
+        dayworker?: DayworkerIdentity
+      }>
+    >(`/onboarding/${businessID}/dayworker-engagements`, body)
+    return unwrap(res.data)
   },
 }
 

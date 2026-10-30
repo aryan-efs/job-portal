@@ -8,7 +8,12 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { pageColumn } from "@/components/layout/pageColumn"
-import { apiErrorMessage, jobsApi, type JobPosting } from "@/lib/api"
+import {
+  apiErrorMessage,
+  dayworkerApi,
+  jobsApi,
+  type JobPosting,
+} from "@/lib/api"
 import { isExpired } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -115,24 +120,75 @@ export function ApplyPage() {
 
     saveApplyForm(form)
 
-    const body = new FormData()
-    body.append("fullName", form.fullName.trim())
-    body.append("mobile", mobile)
-    if (form.email.trim()) body.append("email", form.email.trim())
-    if (form.currentLocation.trim()) body.append("currentLocation", form.currentLocation.trim())
-    if (!isDayworker) {
+    setSubmitting(true)
+    try {
+      if (isDayworker) {
+        if (!job.businessID) {
+          toast.error("This dayworker posting is missing employer details")
+          return
+        }
+
+        const registerRes = await dayworkerApi.register(job.businessID, {
+          fullName: form.fullName.trim(),
+          mobile,
+          ...(form.email.trim() ? { email: form.email.trim() } : {}),
+          ...(form.currentLocation.trim()
+            ? { preferredLocations: [form.currentLocation.trim()] }
+            : {}),
+        })
+        const dayworker = registerRes.dayworker
+        const identifier = dayworker?.publicCode || dayworker?.dayworkerID
+        if (!identifier) {
+          toast.error("Could not create a Dayworker ID")
+          return
+        }
+
+        const startDate = new Date().toISOString().slice(0, 10)
+        try {
+          const engageRes = await dayworkerApi.engage(job.businessID, {
+            dayworkerIdentifier: identifier,
+            startDate,
+            jobSkill: job.jobPosition,
+            ...(job.requisitionID ? { requisitionID: job.requisitionID } : {}),
+            ...(job.branchID ? { branchID: job.branchID } : {}),
+            proceedWithPendingVerification: true,
+          })
+
+          if (engageRes?.requiresVerification && engageRes?.engaged === false) {
+            toast.error("Could not complete engagement — verification is required")
+            return
+          }
+        } catch (engageError) {
+          // Already actively engaged with this employer — treat apply as success.
+          const msg = apiErrorMessage(engageError, "")
+          if (!/already has an active engagement/i.test(msg)) {
+            throw engageError
+          }
+        }
+
+        toast.success(`Application submitted · Dayworker ID ${identifier}`)
+        navigate("/dayworkers", { replace: true })
+        return
+      }
+
+      const body = new FormData()
+      body.append("fullName", form.fullName.trim())
+      body.append("mobile", mobile)
+      if (form.email.trim()) body.append("email", form.email.trim())
+      if (form.currentLocation.trim()) {
+        body.append("currentLocation", form.currentLocation.trim())
+      }
       if (form.totalExperienceMonths) {
         body.append("totalExperienceMonths", form.totalExperienceMonths)
       }
       if (form.currentCtc) body.append("currentCtc", form.currentCtc)
       if (form.expectedCtc) body.append("expectedCtc", form.expectedCtc)
-      if (form.noticePeriodDays) body.append("noticePeriodDays", form.noticePeriodDays)
+      if (form.noticePeriodDays) {
+        body.append("noticePeriodDays", form.noticePeriodDays)
+      }
       if (resume) body.append("resume", resume)
-    }
-    if (confirmDuplicate) body.append("confirmDuplicate", "true")
+      if (confirmDuplicate) body.append("confirmDuplicate", "true")
 
-    setSubmitting(true)
-    try {
       const res = await jobsApi.apply(jobId, body)
       if (res.data?.requiresConfirmation) {
         setNeedsConfirm(true)
