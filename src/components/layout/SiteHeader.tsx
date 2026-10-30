@@ -3,6 +3,12 @@ import { BriefcaseBusiness } from "lucide-react"
 import { pageColumn } from "@/components/layout/pageColumn"
 import { cn } from "@/lib/utils"
 
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    "shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground",
+    isActive && "font-medium text-foreground"
+  )
+
 export function SiteHeader() {
   return (
     <header className="z-40 shrink-0 bg-background/85 backdrop-blur-md w-2xl mx-auto mt-2 rounded-lg">
@@ -17,17 +23,14 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <NavLink
-          to="/"
-          className={({ isActive }) =>
-            cn(
-              "shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground",
-              isActive && "font-medium text-foreground"
-            )
-          }
-        >
-          Browse
-        </NavLink>
+        <nav className="flex items-center gap-4">
+          <NavLink to="/" end className={navLinkClass}>
+            Home
+          </NavLink>
+          <NavLink to="/dayworkers" className={navLinkClass}>
+            Dayworker
+          </NavLink>
+        </nav>
       </div>
     </header>
   )

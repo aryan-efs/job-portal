@@ -105,8 +105,11 @@ export function ApplyPage() {
     event.preventDefault()
     if (!jobId || !job) return
 
-    if (!form.fullName.trim() || !form.mobile.trim()) {
-      toast.error("Name and mobile are required")
+    const isDayworker = String(job.jobType || "").toLowerCase() === "dayworker"
+    const mobile = form.mobile.replace(/\D/g, "").slice(-10)
+
+    if (!form.fullName.trim() || mobile.length !== 10) {
+      toast.error("Name and a valid 10-digit mobile are required")
       return
     }
 
@@ -114,15 +117,19 @@ export function ApplyPage() {
 
     const body = new FormData()
     body.append("fullName", form.fullName.trim())
-    body.append("mobile", form.mobile.trim())
+    body.append("mobile", mobile)
     if (form.email.trim()) body.append("email", form.email.trim())
     if (form.currentLocation.trim()) body.append("currentLocation", form.currentLocation.trim())
-    if (form.totalExperienceMonths) body.append("totalExperienceMonths", form.totalExperienceMonths)
-    if (form.currentCtc) body.append("currentCtc", form.currentCtc)
-    if (form.expectedCtc) body.append("expectedCtc", form.expectedCtc)
-    if (form.noticePeriodDays) body.append("noticePeriodDays", form.noticePeriodDays)
+    if (!isDayworker) {
+      if (form.totalExperienceMonths) {
+        body.append("totalExperienceMonths", form.totalExperienceMonths)
+      }
+      if (form.currentCtc) body.append("currentCtc", form.currentCtc)
+      if (form.expectedCtc) body.append("expectedCtc", form.expectedCtc)
+      if (form.noticePeriodDays) body.append("noticePeriodDays", form.noticePeriodDays)
+      if (resume) body.append("resume", resume)
+    }
     if (confirmDuplicate) body.append("confirmDuplicate", "true")
-    if (resume) body.append("resume", resume)
 
     setSubmitting(true)
     try {
@@ -154,11 +161,12 @@ export function ApplyPage() {
   }
 
   const expired = isExpired(job.expiresAt)
+  const isDayworker = String(job.jobType || "").toLowerCase() === "dayworker"
 
   return (
     <div className={cn(pageColumn, "scrollbar-hide h-full overflow-y-auto py-6")}>
       <Link
-        to={`/jobs/${job.jobID}`}
+        to={isDayworker ? "/dayworkers" : `/jobs/${job.jobID}`}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
@@ -172,6 +180,11 @@ export function ApplyPage() {
             {job.companyName || job.designation}
           </p>
         )}
+        {isDayworker ? (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Dayworker application — only basic details are needed.
+          </p>
+        ) : null}
       </div>
 
       {expired ? (
@@ -197,7 +210,13 @@ export function ApplyPage() {
               <Input
                 id="mobile"
                 value={form.mobile}
-                onChange={(e) => setForm((f) => ({ ...f, mobile: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    mobile: e.target.value.replace(/\D/g, "").slice(0, 10),
+                  }))
+                }
+                inputMode="numeric"
                 required
               />
             </div>
@@ -213,68 +232,77 @@ export function ApplyPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="currentLocation">Current location</Label>
+            <Label htmlFor="currentLocation">
+              {isDayworker ? "Preferred work location" : "Current location"}
+            </Label>
             <Input
               id="currentLocation"
               value={form.currentLocation}
               onChange={(e) => setForm((f) => ({ ...f, currentLocation: e.target.value }))}
+              placeholder={isDayworker ? "City / site" : undefined}
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="exp">Experience (months)</Label>
-              <Input
-                id="exp"
-                type="number"
-                min={0}
-                value={form.totalExperienceMonths}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, totalExperienceMonths: e.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="notice">Notice period (days)</Label>
-              <Input
-                id="notice"
-                type="number"
-                min={0}
-                value={form.noticePeriodDays}
-                onChange={(e) => setForm((f) => ({ ...f, noticePeriodDays: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="currentCtc">Current CTC</Label>
-              <Input
-                id="currentCtc"
-                type="number"
-                min={0}
-                value={form.currentCtc}
-                onChange={(e) => setForm((f) => ({ ...f, currentCtc: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="expectedCtc">Expected CTC</Label>
-              <Input
-                id="expectedCtc"
-                type="number"
-                min={0}
-                value={form.expectedCtc}
-                onChange={(e) => setForm((f) => ({ ...f, expectedCtc: e.target.value }))}
-              />
-            </div>
-          </div>
+          {!isDayworker ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="exp">Experience (months)</Label>
+                  <Input
+                    id="exp"
+                    type="number"
+                    min={0}
+                    value={form.totalExperienceMonths}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, totalExperienceMonths: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="notice">Notice period (days)</Label>
+                  <Input
+                    id="notice"
+                    type="number"
+                    min={0}
+                    value={form.noticePeriodDays}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, noticePeriodDays: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="currentCtc">Current CTC</Label>
+                  <Input
+                    id="currentCtc"
+                    type="number"
+                    min={0}
+                    value={form.currentCtc}
+                    onChange={(e) => setForm((f) => ({ ...f, currentCtc: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="expectedCtc">Expected CTC</Label>
+                  <Input
+                    id="expectedCtc"
+                    type="number"
+                    min={0}
+                    value={form.expectedCtc}
+                    onChange={(e) => setForm((f) => ({ ...f, expectedCtc: e.target.value }))}
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="resume">Resume</Label>
-            <Input
-              id="resume"
-              type="file"
-              accept=".pdf,.doc,.docx,.txt,application/pdf"
-              onChange={(e) => setResume(e.target.files?.[0] ?? null)}
-            />
-          </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="resume">Resume</Label>
+                <Input
+                  id="resume"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,application/pdf"
+                  onChange={(e) => setResume(e.target.files?.[0] ?? null)}
+                />
+              </div>
+            </>
+          ) : null}
 
           {needsConfirm && (
             <Alert>

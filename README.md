@@ -25,7 +25,8 @@ Set `VITE_API_BASE_URL` to your HRMS API (default `http://localhost:8181/api`).
 
 | Path | Purpose |
 |------|---------|
-| `/` | Browse / search active job postings |
+| `/` | Browse / search active Regular & Contract job postings |
+| `/dayworkers` | Browse dayworker openings (`jobType = Dayworker`) |
 | `/jobs/:jobId` | Job detail |
 | `/jobs/:jobId/apply` | Apply (creates candidate with source `EzoHrJobs`) |
 | `/portal/:token` | Candidate onboarding portal (secure link) |

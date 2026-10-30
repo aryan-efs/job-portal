@@ -3,6 +3,7 @@ import { Toaster } from "sonner"
 import { SiteHeader } from "@/components/layout/SiteHeader"
 import { SiteFooter } from "@/components/layout/SiteFooter"
 import { JobsPage } from "@/pages/JobsPage"
+import { DayworkerJobsPage } from "@/pages/DayworkerJobsPage"
 import { JobDetailPage } from "@/pages/JobDetailPage"
 import { ApplyPage } from "@/pages/ApplyPage"
 import { PortalPage } from "@/pages/PortalPage"
@@ -17,6 +18,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<JobsPage />} />
             <Route path="/jobs" element={<Navigate to="/" replace />} />
+            <Route path="/dayworkers" element={<DayworkerJobsPage />} />
             <Route path="/jobs/:jobId" element={<JobDetailPage />} />
             <Route path="/jobs/:jobId/apply" element={<ApplyPage />} />
             <Route path="/portal/:token" element={<PortalPage />} />

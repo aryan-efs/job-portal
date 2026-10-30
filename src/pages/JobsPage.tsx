@@ -9,6 +9,11 @@ import { pageColumn } from "@/components/layout/pageColumn"
 import { apiErrorMessage, jobsApi, type JobPosting } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
+/** Dayworker openings live under /dayworkers — keep Browse for Regular/Contract. */
+function excludeDayworker(jobs: JobPosting[]) {
+  return jobs.filter((job) => String(job.jobType || "").toLowerCase() !== "dayworker")
+}
+
 export function JobsPage() {
   const [jobs, setJobs] = useState<JobPosting[]>([])
   const [loading, setLoading] = useState(true)
@@ -21,7 +26,7 @@ export function JobsPage() {
       setLoading(true)
       try {
         const list = await jobsApi.listActive()
-        if (!cancelled) setJobs(list)
+        if (!cancelled) setJobs(excludeDayworker(list))
       } catch (error) {
         if (!cancelled) toast.error(apiErrorMessage(error, "Could not load jobs"))
       } finally {
@@ -41,7 +46,7 @@ export function JobsPage() {
       setSearching(true)
       try {
         const results = await jobsApi.search(q)
-        setJobs(results)
+        setJobs(excludeDayworker(results))
       } catch (error) {
         toast.error(apiErrorMessage(error, "Search failed"))
       } finally {
@@ -58,7 +63,7 @@ export function JobsPage() {
     ;(async () => {
       try {
         const list = await jobsApi.listActive()
-        if (!cancelled) setJobs(list)
+        if (!cancelled) setJobs(excludeDayworker(list))
       } catch {
         /* ignore — initial load already toasts */
       }
